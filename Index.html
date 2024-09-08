@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convertitore da Markdown a HTML per Email</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.0.2/marked.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        textarea { width: 100%; height: 200px; margin-bottom: 10px; }
+        button { margin-right: 10px; margin-bottom: 10px; }
+        #preview { border: 1px solid #ccc; padding: 10px; margin-top: 20px; }
+        .options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+        .options label { display: block; }
+        .color-options { display: flex; flex-wrap: wrap; gap: 5px; }
+        .color-option { width: 30px; height: 30px; border: 1px solid #000; cursor: pointer; }
+        .color-option.selected { border: 3px solid #000; }
+        .color-option[data-color="#FFFFFF"] { border: 1px solid #ccc; }
+        .color-option[data-color="#FFFFFF"].selected { border: 3px solid #000; }
+        .color-option[data-color="auto"] { 
+            background: linear-gradient(45deg, #ff0000 0%, #00ff00 50%, #0000ff 100%);
+            position: relative;
+        }
+        .color-option[data-color="auto"]::after {
+            content: "A";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: bold;
+            text-shadow: 1px 1px 1px black;
+        }
+    </style>
+</head>
+<body>
+    <h1>Convertitore da Markdown a HTML per Email</h1>
+    <div class="options">
+        <div>
+            <label for="contentWidth">Larghezza contenuto (px):</label>
+            <input type="number" id="contentWidth" value="600" min="300" max="1000">
+        </div>
+        <div>
+            <label for="fontFamily">Font:</label>
+            <select id="fontFamily">
+                <option value="Arial, sans-serif">Arial</option>
+                <option value="'Times New Roman', serif">Times New Roman</option>
+                <option value="Georgia, serif">Georgia</option>
+                <option value="Verdana, sans-serif">Verdana</option>
+            </select>
+        </div>
+        <div>
+            <label for="fontSize">Dimensione testo (px):</label>
+            <input type="number" id="fontSize" value="16" min="12" max="24">
+        </div>
+        <div>
+            <label>Colore testo:</label>
+            <div class="color-options" id="textColorOptions"></div>
+        </div>
+        <div>
+            <label for="textAlign">Allineamento testo:</label>
+            <select id="textAlign">
+                <option value="left">Sinistra</option>
+                <option value="center">Centro</option>
+                <option value="right">Destra</option>
+            </select>
+        </div>
+        <div>
+            <label for="leftMargin">Margine sinistro (px):</label>
+            <input type="number" id="leftMargin" value="0" min="0" max="100">
+        </div>
+    </div>
+    <textarea id="markdown" placeholder="Inserisci qui il tuo Markdown..."></textarea>
+    <button id="convertBtn">Converti in HTML</button>
+    <button id="copyBtn">Copia HTML</button>
+    <div>
+        <h2>Anteprima:</h2>
+        <div id="preview"></div>
+    </div>
+    <textarea id="htmlOutput" style="display:none;"></textarea>
+
+    <script>
+        const colors = [
+            'auto', '#000000', '#333333', '#666666', '#999999', 
+            '#0000FF', '#008000', '#800080', '#FF0000',
+            '#FFA500', '#FFFF00', '#8B4513', '#A52A2A',
+            '#FFFFFF'
+        ];
+        let selectedColor = 'auto';
+
+        function initColorOptions() {
+            const container = document.getElementById('textColorOptions');
+            colors.forEach(color => {
+                const div = document.createElement('div');
+                div.className = 'color-option';
+                if (color !== 'auto') {
+                    div.style.backgroundColor = color;
+                }
+                div.dataset.color = color;
+                div.onclick = () => selectColor(color, div);
+                if (color === selectedColor) {
+                    div.classList.add('selected');
+                }
+                container.appendChild(div);
+            });
+        }
+
+        function selectColor(color, element) {
+            selectedColor = color;
+            document.querySelectorAll('.color-option').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+        }
+
+        function convertToHtml() {
+            const markdown = document.getElementById('markdown').value;
+            const html = marked.parse(markdown);
+            
+            const contentWidth = document.getElementById('contentWidth').value;
+            const fontFamily = document.getElementById('fontFamily').value;
+            const fontSize = document.getElementById('fontSize').value;
+            const textAlign = document.getElementById('textAlign').value;
+            const leftMargin = document.getElementById('leftMargin').value;
+            
+            let styleString = `font-family: ${fontFamily}; max-width: ${contentWidth}px; margin: 0 auto; font-size: ${fontSize}px; text-align: ${textAlign}; margin-left: ${leftMargin}px;`;
+            if (selectedColor !== 'auto') {
+                styleString += ` color: ${selectedColor};`;
+            }
+            
+            const styledHtml = `
+                <div style="${styleString}">
+                    ${html}
+                </div>
+            `;
+            
+            document.getElementById('preview').innerHTML = styledHtml;
+            document.getElementById('htmlOutput').value = styledHtml;
+        }
+
+        function copyHtml() {
+            const htmlOutput = document.getElementById('htmlOutput');
+            htmlOutput.style.display = 'block';
+            htmlOutput.select();
+            document.execCommand('copy');
+            htmlOutput.style.display = 'none';
+            alert('HTML copiato negli appunti!');
+        }
+
+        // Inizializza le opzioni dei colori
+        initColorOptions();
+
+        // Aggiungi event listener ai pulsanti
+        document.getElementById('convertBtn').addEventListener('click', convertToHtml);
+        document.getElementById('copyBtn').addEventListener('click', copyHtml);
+    </script>
+</body>
+</html>
